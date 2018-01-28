@@ -8,7 +8,6 @@ import { PopoverController } from 'ionic-angular/components/popover/popover-cont
 import { LoadingController } from 'ionic-angular/components/loading/loading-controller';
 import { AlertController } from 'ionic-angular/components/alert/alert-controller';
 import { DatabaseOptionsPage } from '../database-options/database-options';
-import { Ingredient } from '../../models/ingredient';
 import { AuthService } from '../../services/auth';
 
 @Component({
@@ -41,18 +40,21 @@ export class RecipesPage {
     popover.present({ev: event});
     popover.onDidDismiss(
       data => {
+        if(!data){
+          return ;
+        }
         if(data.action == 'load'){
           loading.present();
           this.authService.getActiveUser().getToken()
           .then(
             (token:string) => {
-              this.slService.fetchList(token).subscribe(
-                (list: Ingredient[]) => {
+              this.recipesService.fetchList(token).subscribe(
+                (list: Recipe[]) => {
                   loading.dismiss();
                   if(list){
-                    this.listItems = list;
+                    this.recipes = list;
                   }else{
-                    this.listItems = [];
+                    this.recipes = [];
                   }
                 },
                 error => {
@@ -68,7 +70,7 @@ export class RecipesPage {
           this.authService.getActiveUser().getToken()
           .then(
             (token:string) => {
-              this.slService.storeList(token).subscribe(
+              this.recipesService.storeList(token).subscribe(
                 () => {
                   loading.dismiss();
                 },

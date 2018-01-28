@@ -2,13 +2,16 @@ import { Recipe } from "../models/recipe";
 import { Ingredient } from "../models/ingredient";
 import { Injectable } from '@angular/core';
 import { Http } from '@angular/http';
+import { AuthService } from "./auth";
+import { Response } from "@angular/http/src/static_response";
+import 'rxjs/Rx'
 
 
 @Injectable()
 export class RecipesService{
     private recipes: Recipe[] = [];
 
-    constructor(private http: Http){}
+    constructor(private http: Http, private authService: AuthService){}
 
     addRecipe(title: string, description: string, difficulty: string, ingredients: Ingredient[]){
         this.recipes.push(new Recipe(title, description, difficulty, ingredients));
@@ -29,10 +32,31 @@ export class RecipesService{
     }
 
     storeList(token){
-        return this.http.put();
+        const userId = this.authService.getActiveUser().uid;
+        return this.http.put('https://recipe-book-ea34a.firebaseio.com/' + userId + '/recipes.json?auth=' + token, this.recipes)
+        .map((response: Response) => {
+            response.json();
+        });
     }
 
     fetchList(token){
-
+        const userId = this.authService.getActiveUser().uid;
+        return this.http.get('https://recipe-book-ea34a.firebaseio.com/' + userId + '/recipes.json?auth=' + token)
+        .map((response: Response) => {
+            const recipes: Recipe[] = response.json() ? response.json() : [];
+            for(let item of recipes){
+                if(!item.hasOwnProperty('ingredients')){
+                    item.ingredients = [];
+                }
+            }
+            return recipes;
+        })
+        .do((recipes: Recipe[]) => {
+            if(recipes){
+                this.recipes = recipes;
+            }else{
+                this.recipes = [];
+            }
+        });
     }
 }
